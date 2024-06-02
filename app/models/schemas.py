@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 # PlaytimeGenre modelo .
 class PlayTimeGenreResponse(BaseModel):
     año_mas_horas_jugadas: int
+    genero: str
 
 # UserForGenre modelo .
 class PlayTimeByYear(BaseModel):
