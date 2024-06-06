@@ -31,7 +31,8 @@ class DeveloperRanking(BaseModel):
     desarrolladora: str
 
 class UsersWorstDeveloperResponse(BaseModel):
-    top_desarrolladoras: List[DeveloperRanking]
+    top_peores_desarrolladoras_para_el_año: int
+    top_peores_desarrolladoras: List[DeveloperRanking]
 
 # SentimentAnalysis modelo
 class SentimentAnalysisResponse(BaseModel):
