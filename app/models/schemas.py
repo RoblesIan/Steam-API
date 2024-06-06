@@ -6,18 +6,15 @@ class PlayTimeGenreResponse(BaseModel):
     año_mas_horas_jugadas: int
     genero: str
 
-# UserForGenre modelo .
+# PlayTimeByYear modelo.
 class PlayTimeByYear(BaseModel):
     Año: int
     Horas: int
 
 class UserForGenreResponse(BaseModel):
-    usuario: str = Field(..., alias='Usuario con más horas jugadas para género X')
-    horas_jugadas: List[PlayTimeByYear] = Field(..., alias='Horas jugadas')
-
-    class Config:
-        # Allow population by field name for alias handling
-        allow_population_by_field_name = True
+    genero: str
+    usuario_con_mas_horas_jugadas: str
+    horas_jugadas: List[PlayTimeByYear]
 
 # UsersRecommend modelo .
 class GameRecommendation(BaseModel):
@@ -25,6 +22,7 @@ class GameRecommendation(BaseModel):
     juego: str
 
 class UsersRecommendResponse(BaseModel):
+    top_recomendados_para_el_año: int
     top_recomendados: List[GameRecommendation]
 
 # UsersWorstDeveloper modelo .

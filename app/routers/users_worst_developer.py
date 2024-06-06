@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.models.schemas import UsersWorstDeveloperResponse
+from ..models.schemas import UsersWorstDeveloperResponse
 router = APIRouter()
 
 @router.get("/UsersWorstDeveloper", response_model=UsersWorstDeveloperResponse)

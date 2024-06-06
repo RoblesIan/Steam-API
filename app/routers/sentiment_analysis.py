@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.models.schemas import SentimentAnalysisResponse
+from ..models.schemas import SentimentAnalysisResponse
 router = APIRouter()
 
 @router.get("/SentimentAnalysis", response_model=SentimentAnalysisResponse)
