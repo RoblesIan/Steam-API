@@ -1,7 +1,0 @@
-env/
-notebooks/
-backup/
-scripts/
-.gitignore/
-__pycache__/
-pruebas.ipynb
