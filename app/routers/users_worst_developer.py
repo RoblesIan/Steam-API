@@ -16,62 +16,39 @@ async def UsersWorstDeveloper(año: int):
     # lógica
 
     # Carga de datos con filtro de columnas: user_reviews
-    columns1 = ["item_id", "posted", "sentiment_analysis"]
-    user_reviews_df = db.load_user_reviews(columns1)
-    print(f" carga \n shape: {user_reviews_df.shape} \n {user_reviews_df}")
+    user_reviews_df = db.load_user_reviews(["item_id", "posted", "sentiment_analysis"])
 
-    # Como solo dimos soporte a reviews en ingles y reviews vacias con recommend, filtramos los user_reviews_df != pd.NA
-    user_reviews_df = user_reviews_df[user_reviews_df['sentiment_analysis'].notna()]
-    print(f" filtro != pd.NA \n shape: {user_reviews_df.shape} \n {user_reviews_df}")
-
-    # Filtrar user_reviews por el año proporcionado
+    # Filtrar por año dado y reseñas no vacías
     user_reviews_df = user_reviews_df[user_reviews_df['posted'] == año]
-    print(f" filtro año dado \n shape: {user_reviews_df.shape} \n {user_reviews_df}")
+    user_reviews_df = user_reviews_df[user_reviews_df['sentiment_analysis'].notna()]
 
-    # Verificar si se encontraron datos para el género dado
+    # Verificar si se encontraron datos para el año dado
     if user_reviews_df.empty:
         raise HTTPException(status_code=404, detail="No se encontraron reseñas para el año dado")
 
     # Carga de datos con filtro de columnas: steam_games
-    columns2 = ["item_id", "developer"]
-    steam_games_df = db.load_steam_games(columns2)
-
-    # Eliminamos la columna user_reviews.posted, ya que no la vamos a utilizar mas
-    user_reviews_df.drop(columns=['posted'], inplace=True)
-    print(f" eliminamos columna posted \n shape: {user_reviews_df.shape} \n {user_reviews_df}")
+    steam_games_df = db.load_steam_games(["item_id", "developer"])
 
     # Unir user_reviews_df con steam_games_df para obtener los nombres de las desarrolladoras
-    user_reviews_df = pd.merge(user_reviews_df, steam_games_df[['item_id', 'developer']], on='item_id', how='left')
-    print(f" merge \n shape: {user_reviews_df.shape} \n {user_reviews_df}")
+    user_reviews_df = pd.merge(user_reviews_df[['item_id', 'sentiment_analysis']], steam_games_df, on='item_id', how='left')
 
     # Calcular el total de reseñas y el número de reseñas negativas para cada desarrolladora
-    total_reviews = user_reviews_df.groupby('developer')['sentiment_analysis'].count().reset_index(name='total_reviews')
-    negative_reviews = user_reviews_df[user_reviews_df['sentiment_analysis'] == 0].groupby('developer')['sentiment_analysis'].count().reset_index(name='negative_reviews')
-    print(f" calculo de reseñas \n shapes: {total_reviews.shape}, {negative_reviews.shape} \n total reviews \n {user_reviews_df} \n \n negative reviews \n {negative_reviews}")
-
-    # Unir ambos DataFrames por la columna 'developer'
-    developers_reviews_df = pd.merge(total_reviews, negative_reviews, on='developer', how='left')
-    print(f"unimos total con negative \n {developers_reviews_df}")
-
-    # Rellenar NaN en negative_reviews con 0
-    developers_reviews_df['negative_reviews'] = developers_reviews_df['negative_reviews'].fillna(0)
+    reviews_summary = user_reviews_df.groupby('developer').agg(
+        total_reviews=('sentiment_analysis', 'count'),
+        negative_reviews=('sentiment_analysis', lambda x: (x == 0).sum())
+    ).reset_index()
 
     # Calcular la proporción de reseñas negativas
-    developers_reviews_df['negative_proportion'] = developers_reviews_df['negative_reviews'] / developers_reviews_df['total_reviews']
-    print(f"calculamos la proporcion de reseñas negativas \n {developers_reviews_df}")
+    reviews_summary['negative_proportion'] = reviews_summary['negative_reviews'] / reviews_summary['total_reviews']
 
-    # Ordenar por la proporción de reseñas negativas de forma descendente (mayor a menor)
-    developers_reviews_df = developers_reviews_df.sort_values(by='negative_proportion', ascending=False)
-    print(f"ordenamos de forma descendente \n {developers_reviews_df}")
-
-    # Seleccionar solo las top 3 desarrolladoras con mayor proporción de reseñas negativas
-    developers_reviews_df = developers_reviews_df.head(3).reset_index(drop=True)
-    print(f"top 3 {developers_reviews_df}")
+    # Ordenar por la proporción de reseñas negativas de forma descendente y seleccionar las top 3 desarrolladoras
+    top_worst_developers_df = reviews_summary.sort_values(by='negative_proportion', ascending=False).head(3).reset_index(drop=True)
 
     # Crear lista de desarrolladores con mayor proporción de reseñas negativas
+    
     top_worst_developers_list = [
-        {"puesto": i + 1, "desarrolladora": row['developer']} 
-        for i, row in developers_reviews_df.iterrows()
+        {"puesto": i + 1, "desarrolladora": row['developer']}
+        for i, row in top_worst_developers_df.iterrows()
     ]
 
     return UsersWorstDeveloperResponse(
